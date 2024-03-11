@@ -23,7 +23,7 @@ class LikeController extends Controller
    public function togglelike($id){
       $user = auth()->user();//get current user logged in
       $post = Post::find($id);
-      $liked = $post->likes->contains($user->id);
+      $liked = $post->likes->contains('user_id',$user->id);
       if($liked){
         $like = Like::where('user_id',$user->id)->where('post_id',$post->id)->first();
         $like->delete();

@@ -139,7 +139,6 @@ class AuthController extends Controller
            if(file_exists($oldImage)){
             @unlink($oldImage);
            }
-           
         }
         $user->update($data);
        $baseUrlImage = request()->getSchemeAndHttpHost().'/profile';

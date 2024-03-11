@@ -8,13 +8,13 @@ use App\Models\Post;
 class PostController extends Controller
 {
     public function index(){
-       $posts = Post::with('user')->latest()->paginate(10);
+        $posts = Post::with('user')->latest()->paginate(20);
            foreach($posts as $post){
             //count like
             $post['likes_count'] = $post->likes->count();
             //count comment
             $post['comments_count'] = $post->comments->count();
-           $post['liked'] = $post->likes->where(auth()->user()->id);
+           $post['liked'] = $post->likes->contains('user_id',auth()->user()->id);
            }
            return response()->json([
             'status'=>'succes',
@@ -52,37 +52,33 @@ class PostController extends Controller
             'message'=>'you are not authorized to update this post'
         ],404);
     }
-    //if request has photo
-    if($request->hasFile('photo')){
-        $image = Request('photo');
-        $name = time().'.'.$image->getClientOriginalExtension();
-        $destinationPath = public_path('/post');
-        $image->move($destinationPath,$name);
-       $data['image_url'] = $name;
-       //get old file
-      $oldImage = public_path('/posts/'.$post->image_url);
-       if(file_exists($oldImage)){
-        @unlink($oldImage);
-       }
+    if($post){
+    
+        //if request has photo
+        if($request->hasFile('photo')){
+            $image = Request('photo');
+            $name = time().'.'.$image->getClientOriginalExtension();
+            $destinationPath = public_path('/post');
+            $image->move($destinationPath,$name);
+           $data['image_url'] = $name;
+           //get old file
+          $oldImage = public_path('/post/').$post->image_url;
+           if(file_exists($oldImage)){
+            @unlink($oldImage);
+           }
+           
+        }
+        $post->update($data);
+       $baseUrlImage = request()->getSchemeAndHttpHost().'/post';
+       $post->image_url = $baseUrlImage.'/'.$data['image_url'];
+       return response(['post'=>$post]);
     }
-    /*$post->update($data);
-    //check request has title or body
-    if($request->has('title')){
-        //$post->title = $data['data'];
-    }
-    if($request->has('title')){
-       $post->body = $data['body'];}*/
-       $post->update($data);
-    return response()->json([
-        'status'=>'succes',
-        'data'=>$post,
-    ]);
 }
 public function destroy($id){
     $post = Post::find($id);//find post id
     //check if has photo
     if($post->image_url){
-        $oldImage = public_path('/posts/').$post->image_url;
+        $oldImage = public_path('/posts/').$post->image;
         if(file_exists($oldImage)){
             unlink($oldImage);
         }
@@ -107,22 +103,22 @@ public function destroy($id){
 }
     
     public function store(Request $request){
-        $user = auth()->user();
-        $data = $request->all();
-        $data['user_id'] = $user->id;
-        $post = Post::create($data);
-        if($request->hasFile('photo')){
-            $image = Request('photo');
-            $name = time().'.'.$image->getClientOriginalExtension();
-            $destinationPath = public_path('/post');
-            $image->move($destinationPath,$name);
-           $data['image_url'] = $name;
-        }
-        $post['image_url'] = $name;
-        return response()->json([
-            'status'=>'success',
-            'data'=>$post
-        ]);
+       $user = auth() -> user();
+       $data = $request->all();
+       $data['user_id'] = $user->id;
+
+       if($request->hasFile('photo')){
+        $image = $request->file('photo');
+        $name = time().'.'.$image->getClientOriginalExtension();
+        $destinationPath = public_path('/posts');
+        $image->move($destinationPath, $name);
+        $data['image_url'] = $name;
+       }
+       $post = Post::create($data);
+       return response()->json([
+        'status' => 'success',
+        'data' => $post,
+       ]);
         
     }
 }

@@ -50,5 +50,4 @@ Route::group([
    Route::get('me',[AuthController::class,'me']);
    Route::post('register',[AuthController::class,'register']);
    Route::post('updateProfile/{id}',[AuthController::class,'update']);
-
 });
